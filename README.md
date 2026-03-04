@@ -1,4 +1,4 @@
-# TargetAnalyses--- START OF FILE Paste March 01, 2026 - 4:24PM ---
+--- START OF FILE Paste March 04, 2026 - 4:22PM ---
 
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -311,8 +311,8 @@
                 atkTitle: "Key Attack Opportunities", spdAdv: "Speed Mismatch", sklAdv: "Technical Dribble", tacAdv: "Tactical Overload",
                 colRating: "Rating", colSkill: "Skill", colSpeed: "Speed", colPlayer: "Name",
                 titleCoach: "🧠 AI Coach Insights", titleVerdict: "Verdict",
-                titleAdvancedAI: "🚀 AI Tactical Deep-Dive", labelSub: "Suggested Substitutions", labelPass: "Target Passing Lane",
-                dangerousPlayers: "Top Dangerous Players", optimalFormation: "Best Strategic Formation"
+                titleAdvancedAI: "🚀 AI Tactical Deep-Dive", labelSub: "Suggested Substitution", labelPass: "Target Passing Lane",
+                labelFormation: "Suggested Formation"
             }, 
             ar: { 
                 headTitle: "محلل كرة القدم الذكي", vidTime: "وقت الفيديو", btnLoad: "تحميل ملف مسجل",
@@ -324,8 +324,8 @@
                 atkTitle: "فرص الهجوم الرئيسية", spdAdv: "تفوق سرعة", sklAdv: "مهارة مراوغة", tacAdv: "زيادة عددية",
                 colRating: "تقييم", colSkill: "مهارة", colSpeed: "سرعة", colPlayer: "الاسم",
                 titleCoach: "🧠 رؤى المدرب الذكي", titleVerdict: "النتيجة النهائية",
-                titleAdvancedAI: "🚀 تعمق تكتيكي ذكي", labelSub: "قائمة التبديلات المطلوبة", labelPass: "منطقة التمرير المستهدفة",
-                dangerousPlayers: "أخطر اللاعبين في الفريق", optimalFormation: "أفضل تشكيلة لمواجهة الخصم"
+                titleAdvancedAI: "🚀 تعمق تكتيكي ذكي", labelSub: "التبديل المقترح", labelPass: "منطقة التمرير المستهدفة",
+                labelFormation: "التشكيلة المقترحة"
             } 
         };
 
@@ -481,7 +481,7 @@
             const gen = (atk, def, nm) => {
                 let h = `<div class="bg-gray-800 rounded-xl p-5 border border-gray-700"><h4 class="text-green-400 font-bold mb-3 uppercase tracking-wide border-b border-gray-700 pb-2">${nm} ${dictionary[currentLang].atkTitle}</h4><div class="space-y-3">`;
                 const a = atk.filter(p=>['FWD','MID'].includes(p.role)).sort((a,b)=>b.speed-a.speed);
-                const d = def.filter(p=>['DEF','GK'].includes(p.role)).sort((a,b)=>a.speed-b.speed);
+                const d = def.filter(p=>p.role==='DEF').sort((a,b)=>a.speed-b.speed);
                 if(a.length && d.length && (parseFloat(a[0].speed)>parseFloat(d[0].speed)+2)) h+=`<div class="flex items-center gap-3 bg-gray-900/50 p-2 rounded border-l-2 border-yellow-500"><span class="text-xl">⚡</span><div><strong class="text-sm text-yellow-100">${dictionary[currentLang].spdAdv}</strong><p class="text-xs text-gray-400">${a[0].customName} > ${d[0].customName}</p></div></div>`;
                 const tm = atk.filter(p=>p.role==='MID').sort((a,b)=>b.skill-a.skill);
                 const wd = def.filter(p=>p.role==='DEF').sort((a,b)=>a.skill-b.skill);
@@ -500,48 +500,36 @@
             const nB = document.getElementById('lblTeamBDash').innerText;
 
             const analyzeTeam = (myTeam, oppTeam, teamName, isArabic) => {
-                // Top 3 Dangerous Players
-                const dangerous = [...myTeam].sort((a,b) => b.score - a.score).slice(0,3);
+                // Find weakest player (lowest score) for replacement suggestion
+                const weakPlayer = [...myTeam].sort((a,b) => a.score - b.score)[0];
                 
-                // Players to be replaced (Bottom 2 by score)
-                const replacements = [...myTeam].sort((a,b) => a.score - b.score).slice(0,2);
-                
-                // Formation Logic
-                const avgSpeed = myTeam.reduce((acc, p) => acc + parseFloat(p.speed), 0) / myTeam.length;
-                const avgSkill = myTeam.reduce((acc, p) => acc + p.skill, 0) / myTeam.length;
-                let formationText = "4-4-2 Balanced";
-                if(avgSpeed > 31) formationText = "4-3-3 Counter-Attack";
-                else if(avgSkill > 80) formationText = "4-2-3-1 Possession";
-
+                // Find opponent's weakest defensive link
                 const oppWeakLink = [...oppTeam].filter(p => ['DEF','MID'].includes(p.role)).sort((a,b) => a.score - b.score)[0];
-                let sideLabel = oppWeakLink.number % 2 === 0 ? (isArabic ? "الجناح الأيمن" : "Right Wing") : (isArabic ? "الجناح الأيسر" : "Left Wing");
                 
+                // Find my best technical player to target that link
+                const myStar = [...myTeam].sort((a,b) => b.score - a.score)[0];
+
+                let sideLabel = oppWeakLink.number % 2 === 0 ? (isArabic ? "الجناح الأيمن" : "Right Wing") : (isArabic ? "الجناح الأيسر" : "Left Wing");
+                if (oppWeakLink.role === 'MID') sideLabel = isArabic ? "وسط الملعب" : "Central Midfield";
+
+                const subTxt = isArabic 
+                    ? `يُنصح باستبدال اللاعب <b>#${weakPlayer.number} (${weakPlayer.customName})</b> نظراً لانخفاض المردود البدني والتقني حالياً.`
+                    : `Recommend replacing <b>#${weakPlayer.number} (${weakPlayer.customName})</b> due to declining physical and technical output.`;
+
                 const passTxt = isArabic
-                    ? `استهدف <b>${sideLabel}</b> لتجاوز الخصم <b>#${oppWeakLink.number}</b>.`
-                    : `Target the <b>${sideLabel}</b> to exploit opponent <b>#${oppWeakLink.number}</b>.`;
+                    ? `يجب توجيه الكرات نحو <b>${sideLabel}</b> لاستغلال الثغرة الدفاعية لدى الخصم المتمثلة في اللاعب <b>#${oppWeakLink.number}</b>.`
+                    : `Direct passes toward the <b>${sideLabel}</b> to exploit the defensive gap created by opponent <b>#${oppWeakLink.number}</b>.`;
 
                 return `
                     <div class="bg-gray-900/40 p-4 rounded-lg border border-gray-700">
                         <h4 class="font-bold text-white mb-3 flex items-center gap-2">
-                             <span class="w-3 h-3 rounded-full" style="background:${teamColors[myTeam[0].teamPrefix].hex}"></span>
+                             <span class="w-2 h-2 rounded-full" style="background:${teamColors[myTeam[0].teamPrefix].hex}"></span>
                              ${teamName}
                         </h4>
                         <div class="space-y-4">
                             <div class="text-xs">
-                                <span class="text-yellow-400 font-bold block mb-1 uppercase">🔥 ${dictionary[currentLang].dangerousPlayers}</span>
-                                <ul class="list-disc list-inside text-gray-300">
-                                    ${dangerous.map(p => `<li>#${p.number} ${p.customName} (${p.score})</li>`).join('')}
-                                </ul>
-                            </div>
-                            <div class="text-xs">
-                                <span class="text-red-400 font-bold block mb-1 uppercase">🔄 ${dictionary[currentLang].labelSub}</span>
-                                <ul class="list-disc list-inside text-gray-300">
-                                    ${replacements.map(p => `<li>#${p.number} ${p.customName}</li>`).join('')}
-                                </ul>
-                            </div>
-                            <div class="text-xs">
-                                <span class="text-blue-400 font-bold block mb-1 uppercase">📋 ${dictionary[currentLang].optimalFormation}</span>
-                                <p class="text-gray-300 font-bold">${formationText}</p>
+                                <span class="text-red-400 font-bold block mb-1 uppercase">⚠️ ${dictionary[currentLang].labelSub}</span>
+                                <p class="text-gray-300">${subTxt}</p>
                             </div>
                             <div class="text-xs">
                                 <span class="text-green-400 font-bold block mb-1 uppercase">🎯 ${dictionary[currentLang].labelPass}</span>
@@ -601,7 +589,21 @@
             const t=document.getElementById('teamSelector').value;
             if(!generatedTactics[t]) return;
             const p=generatedTactics[t][currentPlan-1]; 
-            document.getElementById('planDescription').innerHTML=`<div class="flex items-start gap-3"><span class="text-2xl">🎯</span><div><strong class="block text-lg text-green-400">Plan ${currentPlan}</strong><p class="text-gray-300 text-sm">${p.d}</p></div></div>`; 
+            const formationName = "AI Optimized 4-3-3"; 
+            document.getElementById('planDescription').innerHTML=`
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl">🎯</span>
+                        <div>
+                            <strong class="block text-lg text-green-400">Plan ${currentPlan}</strong>
+                            <p class="text-gray-300 text-sm">${p.d}</p>
+                        </div>
+                    </div>
+                    <div class="bg-black/30 px-4 py-2 rounded border border-white/10 text-center">
+                        <span class="block text-[10px] text-gray-400 uppercase font-bold">${dictionary[currentLang].labelFormation}</span>
+                        <span class="text-yellow-400 font-bold text-sm">${formationName}</span>
+                    </div>
+                </div>`; 
         }
         function drawScene(){
             if(!ctx)return; ctx.clearRect(0,0,canvasWidth,canvasHeight);
@@ -609,7 +611,9 @@
             ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=2; ctx.strokeRect(20,20,canvasWidth-40,canvasHeight-40); ctx.beginPath(); ctx.moveTo(canvasWidth/2,20); ctx.lineTo(canvasWidth/2,canvasHeight-20); ctx.stroke(); ctx.beginPath(); ctx.arc(canvasWidth/2,canvasHeight/2,50,0,Math.PI*2); ctx.stroke();
             const tId=document.getElementById('teamSelector').value||'A', plan=generatedTactics[tId]?generatedTactics[tId][currentPlan-1]:null, teamArr=tId==='A'?teamA:teamB, color=tId==='A'?teamColors.A.hex:teamColors.B.hex, isL2R=tId==='A'?!isTeamASwapped:isTeamASwapped;
             if(plan&&plan.p){ const pts=plan.p.map(i=>{const fx=isL2R?formation[i].x:1-formation[i].x;return{x:fx*canvasWidth,y:formation[i].y*canvasHeight};}); if(pts.length>0){ ctx.beginPath(); ctx.lineWidth=6; ctx.strokeStyle='#fbbf24'; ctx.shadowBlur=15; ctx.shadowColor='#fbbf24'; ctx.setLineDash([15,10]); ctx.lineDashOffset=lineDashOffset; ctx.moveTo(pts[0].x,pts[0].y); for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y); const gx=isL2R?canvasWidth-20:20; ctx.lineTo(gx,canvasHeight/2); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset=0; ctx.shadowBlur=0; ctx.beginPath(); ctx.fillStyle='#fbbf24'; const dir=isL2R?-1:1; ctx.moveTo(gx,canvasHeight/2); ctx.lineTo(gx+15*dir,canvasHeight/2-10); ctx.lineTo(gx+15*dir,canvasHeight/2+10); ctx.fill(); } }
-            teamArr.forEach((p,i)=>{ if(i>=formation.length)return; const fx=isL2R?formation[i].x:1-formation[i].x, px=fx*canvasWidth, py=formation[i].y*canvasHeight; ctx.beginPath(); ctx.arc(px,py+4,14,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fill(); const pGrad=ctx.createRadialGradient(px-5,py-5,2,px,py,14); pGrad.addColorStop(0,lighten(color,20)); pGrad.addColorStop(1,color); ctx.beginPath(); ctx.arc(px,py,14,0,Math.PI*2); ctx.fillStyle=pGrad; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='#fff'; ctx.font='bold 11px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.number,px,py); });
+            teamArr.forEach((p,i)=>{ if(i>=formation.length)return; const fx=isL2R?formation[i].x:1-formation[i].x, px=fx*canvasWidth, py=formation[i].y*canvasHeight; ctx.beginPath(); ctx.arc(px,py+4,14,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fill(); const pGrad=ctx.createRadialGradient(px-5,py-5,2,px,py,14); pGrad.addColorStop(0,lighten(color,20)); pGrad.addColorStop(1,color); ctx.beginPath(); ctx.arc(px,py,14,0,Math.PI*2); ctx.fillStyle=pGrad; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='#fff'; ctx.font='bold 11px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.number,px,py); 
+            // Draw Player Name
+            ctx.shadowBlur=4; ctx.shadowColor="black"; ctx.fillStyle='white'; ctx.font='bold 13px Cairo'; ctx.fillText(p.customName, px, py + 30); ctx.shadowBlur=0; });
         }
         function lighten(h,a){let n=parseInt(h.slice(1),16),r=(n>>16)+a,b=((n>>8)&0x00FF)+a,g=(n&0x0000FF)+a;const x=(v)=>Math.min(255,Math.max(0,v));return `rgb(${x(r)},${x(b)},${x(g)})`;}
         function renderCoach(){ const c=document.getElementById('coachSuggestions'); c.innerHTML=""; const logic=(a,d)=>{const at=a.filter(p=>['FWD','MID'].includes(p.role)).sort((x,y)=>y.speed-x.speed).slice(0,2), df=d.filter(p=>p.role==='DEF').sort((x,y)=>x.speed-y.speed).slice(0,2); let r=[]; at.forEach(att=>{df.forEach(def=>{if(parseFloat(att.speed)-parseFloat(def.speed)>5) r.push({m:`${att.customName} (${att.speed}) ⚡ ${def.customName} (${def.speed})`,a:`Sub ${def.customName}`})})}); return r;}; const all=[...logic(teamB,teamA),...logic(teamA,teamB)]; if(all.length===0) c.innerHTML=`<div class="p-3 bg-green-900/20 text-center text-sm text-green-300">Teams balanced.</div>`; else all.slice(0,3).forEach(s=>c.innerHTML+=`<div class="bg-red-900/20 border-l-4 border-red-500 p-3 rounded-r flex gap-3 text-sm"><span class="text-xl">⚠️</span><div><p class="font-bold text-red-200">${s.m}</p><p class="text-gray-400">REC: ${s.a}</p></div></div>`); }
@@ -637,3 +641,4 @@
     </script>
 </body>
 </html>
+
